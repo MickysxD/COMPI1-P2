@@ -1,6 +1,5 @@
-function ptos(){
-    console.log("prros");
-    console.log("todos");
-}
+import Lexico from "./Analizador/Lexico";
+import Sintactico from "./Analizador/Sintactico";
 
-ptos();
+
+

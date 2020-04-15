@@ -1,6 +1,2 @@
 "use strict";
-function ptos() {
-    console.log("prros");
-    console.log("todos");
-}
-ptos();
+Object.defineProperty(exports, "__esModule", { value: true });
