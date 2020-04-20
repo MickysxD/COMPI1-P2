@@ -195,7 +195,47 @@ function DescargarArchivo(){
     }
 }
 
-function tenerTexto(){
-    var tact=document.getElementById(vent_focus);
-    return tact.value;
+function carga(){
+    try {
+        var act=document.getElementById('consola');
+        var tact=document.getElementById('txtConsola');
+
+        var editor=CodeMirror(act, {
+            lineNumbers: true,
+            value: "",
+            matchBrackets: true,
+            styleActiveLine: true,
+            theme: "eclipse",
+            mode: "text/x-java",
+            id: 'txtConsola',
+            name: 'txtConsola'
+        });
+
+        tact.onchange(tact => {
+            editor.value = tact.value;
+        });
+
+        tact.value += "ptos";
+
+    }catch(error) {
+
+
+    }
+
+
+/*
+
+    var act=document.getElementById('cpestana'+x);
+    var tact=document.getElementById('textarea'+x);
+    var editor=CodeMirror(act, {
+        lineNumbers: true,
+        value: tact.value,
+        matchBrackets: true,
+        styleActiveLine: true,
+        theme: "eclipse",
+        mode: "text/x-java"
+    }).on('change', editor => {
+        tact.value=editor.getValue();
+    });
+*/
 }
