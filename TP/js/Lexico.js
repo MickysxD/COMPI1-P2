@@ -27,8 +27,11 @@ var ErrorLexico = /** @class */ (function () {
     return ErrorLexico;
 }());
 var indiceTK = 0;
+var tabulador = 0;
 var tokens = [];
 var errores = [];
+var salida = document.getElementById('txtSalida');
+var consola = document.getElementById("txtConsola");
 var Lexico = /** @class */ (function () {
     function Lexico() {
     }
@@ -40,6 +43,10 @@ var Lexico = /** @class */ (function () {
     };
     Lexico.prototype.analisisTodo = function (cadena) {
         //let cadena = (document.getElementById(entrada) as HTMLInputElement).value;
+        salida = document.getElementById('txtSalida');
+        consola = document.getElementById("txtConsola");
+        indiceTK = 0;
+        tabulador = 0;
         tokens = [];
         errores = [];
         var posicion = 0;
@@ -454,8 +461,6 @@ var Lexico = /** @class */ (function () {
                     break;
             }
         }
-        var salida = document.getElementById('txtSalida');
-        var consola = document.getElementById("txtConsola");
         salida.value = "";
         consola.value = "";
         consola.value += "                      Tokens\n";
@@ -475,7 +480,7 @@ var Lexico = /** @class */ (function () {
     Lexico.prototype.analisis_sin = function () {
         try {
             while (indiceTK < tokens.length) {
-                var val = this.consoleWrite();
+                var val = this.comienzo();
                 if (val == 1) { //mode panic on
                     while (tokens[indiceTK].lexema != ";" && indiceTK < tokens.length) { //vas a reccorer la lista hasta encontrar un ;
                         indiceTK++;
@@ -486,6 +491,32 @@ var Lexico = /** @class */ (function () {
         }
         catch (error) {
         }
+    };
+    Lexico.prototype.comienzo = function () {
+        if (tokens[indiceTK].idTipo == 15 || tokens[indiceTK].idTipo == 16) {
+            return this.comentario();
+        }
+        else if (tokens[indiceTK].lexema == "class") {
+            return this.clase();
+        }
+        return 1;
+    };
+    Lexico.prototype.clase = function () {
+        indiceTK++;
+        return 0;
+    };
+    Lexico.prototype.comentario = function () {
+        /*for(var i = 0; i<tabulador; i++){
+            salida.value +="\t";
+        }*/
+        if (tokens[indiceTK].idTipo == 15) {
+            salida.value += "#" + tokens[indiceTK].lexema + "\n";
+        }
+        else if (tokens[indiceTK].idTipo == 16) {
+            salida.value += "'''" + tokens[indiceTK].lexema + "'''\n";
+        }
+        indiceTK++;
+        return 0;
     };
     Lexico.prototype.consoleWrite = function () {
         if (tokens[indiceTK].lexema == "Console") {

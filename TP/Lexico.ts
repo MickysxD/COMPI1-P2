@@ -43,8 +43,11 @@ class ErrorLexico{
 }
 
 var indiceTK = 0;
+var tabulador = 0;
 let tokens:TokenLexico[] = [];
 let errores:ErrorLexico[] = [];
+var salida = (document.getElementById('txtSalida')as HTMLInputElement);
+var consola = (document.getElementById("txtConsola") as HTMLInputElement);
 
 
 class Lexico{
@@ -59,7 +62,10 @@ class Lexico{
 
     analisisTodo(cadena:string){
         //let cadena = (document.getElementById(entrada) as HTMLInputElement).value;
-        
+        salida = (document.getElementById('txtSalida')as HTMLInputElement);
+        consola = (document.getElementById("txtConsola") as HTMLInputElement);
+        indiceTK = 0;
+        tabulador = 0;
         tokens = [];
         errores = [];
         let posicion = 0;
@@ -452,13 +458,8 @@ class Lexico{
 
         }
 
-        
-        var salida = (document.getElementById('txtSalida')as HTMLInputElement);
-        var consola = (document.getElementById("txtConsola") as HTMLInputElement);
-
         salida.value = "";
         consola.value = "";
-
         consola.value += "                      Tokens\n";
 
         tokens.forEach(element => {
@@ -483,8 +484,8 @@ class Lexico{
     analisis_sin(){
         try{
             while(indiceTK < tokens.length){
-                let val = this.consoleWrite();
-    
+                let val = this.comienzo();
+
                 if(val == 1){//mode panic on
                     while(tokens[indiceTK].lexema != ";" && indiceTK <tokens.length){//vas a reccorer la lista hasta encontrar un ;
                         indiceTK++;
@@ -496,6 +497,37 @@ class Lexico{
 
         }
        
+    }
+
+    comienzo():number{
+        if(tokens[indiceTK].idTipo == 15 || tokens[indiceTK].idTipo == 16){
+            return this.comentario();
+        }else if(tokens[indiceTK].lexema == "class"){
+            return this.clase();
+        }
+
+        return 1;
+
+    }
+
+    clase():number{
+        indiceTK++;
+        return 0;
+    }
+
+    comentario():number{
+        /*for(var i = 0; i<tabulador; i++){
+            salida.value +="\t";
+        }*/
+
+        if(tokens[indiceTK].idTipo == 15){
+            salida.value += "#"+tokens[indiceTK].lexema+"\n";
+        }else if( tokens[indiceTK].idTipo == 16){
+            salida.value += "'''"+tokens[indiceTK].lexema+"'''\n";
+        }
+
+        indiceTK++;
+        return 0;
     }
 
     consoleWrite():number{
