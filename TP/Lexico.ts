@@ -44,11 +44,13 @@ class ErrorLexico{
 
 var indiceTK = 0;
 var tabulador = 0;
+var entro = false;
 let tokens:TokenLexico[] = [];
 let errores:ErrorLexico[] = [];
 var salida = (document.getElementById('txtSalida')as HTMLInputElement);
 var consola = (document.getElementById("txtConsola") as HTMLInputElement);
-
+var salidaj = (document.getElementById("salidaJson") as HTMLInputElement);
+let cadHTML = ""; 
 
 class Lexico{
 
@@ -60,10 +62,12 @@ class Lexico{
         }
     }
 
+    //ya
     analisisTodo(cadena:string){
-        //let cadena = (document.getElementById(entrada) as HTMLInputElement).value;
+        //let cadena = (document.getElementById(entrada) as HTMLInputElement).value;salidaJson
         salida = (document.getElementById('txtSalida')as HTMLInputElement);
         consola = (document.getElementById("txtConsola") as HTMLInputElement);
+        salidaj = (document.getElementById("salidaJson") as HTMLInputElement);
         indiceTK = 0;
         tabulador = 0;
         tokens = [];
@@ -296,8 +300,15 @@ class Lexico{
                             tokens.push(new TokenLexico(idToken, "Caracter", 21, lexema, fila, columna));
                             idToken++;
                         }else{
-                            errores.push(new ErrorLexico(idError, "No es caracter", lexema, fila, columna));
-                            idError++;
+                            let dp = lexema.split("<html");
+                            if(dp.length < 1){
+                                errores.push(new ErrorLexico(idError, "No es caracter", lexema, fila, columna));
+                                idError++;
+                            }else{
+                                cadHTML = lexema;
+                                tokens.push(new TokenLexico(idToken, "Cadena especial", 20, lexema, fila, columna));
+                                idToken++;
+                            }
                         }
                         estado = 0;
                         lexema = "";
@@ -321,7 +332,6 @@ class Lexico{
                         lexema = "";
                         idToken++;
                         columna++;
-                        posicion++;
                     }
                     break;
 
@@ -340,7 +350,6 @@ class Lexico{
                         lexema = "";
                         idToken++;
                         columna++;
-                        posicion++;
                     }
                     break;
 
@@ -359,7 +368,6 @@ class Lexico{
                         lexema = "";
                         idToken++;
                         columna++;
-                        posicion++;
                     }
                     break;
 
@@ -378,7 +386,6 @@ class Lexico{
                         lexema = "";
                         idToken++;
                         columna++;
-                        posicion++;
                     }
                     break;
 
@@ -460,6 +467,8 @@ class Lexico{
 
         salida.value = "";
         consola.value = "";
+        salidaj.value = "";
+
         consola.value += "                      Tokens\n";
 
         tokens.forEach(element => {
@@ -479,116 +488,1698 @@ class Lexico{
 
         this.analisis_sin();
         
+        cadHTML = cadHTML.split("html>").join("html>\n")
+        cadHTML = cadHTML.split("head>").join("head>\n")
+        cadHTML = cadHTML.split("/title>").join("/title>\n")
+        cadHTML = cadHTML.split("/head>").join("/head>\n")
+        cadHTML = cadHTML.split("/h1>").join("/h1>\n")
+        cadHTML = cadHTML.split("body>").join("body>\n")
+        cadHTML = cadHTML.split("div>").join("div>\n")
+        cadHTML = cadHTML.split("/p>").join("/p>\n")
+        cadHTML = cadHTML.split("label>").join("label>\n")
+        cadHTML = cadHTML.split("input>").join("input>\n")
+        cadHTML = cadHTML.split("/button>").join("/button>\n")
+        cadHTML = cadHTML.split("\">").join("\">\n")
+        
+        salidaj.value += "                  HTML\n" + cadHTML + "\n\n";
+
+        salidaj.value += "                  JSON\n";
+
+        salidaj.value += this.json();;
+
+    }
+
+    json():string{
+        let cd = cadHTML;
+
+        cd = cd.split("<html>").join("\"HTML\":{")
+        cd = cd.split("</html>").join("}")
+
+        cd = cd.split("<head>").join("\"HEAD\":{")
+        cd = cd.split("</head>").join("}")
+
+        cd = cd.split("<title>").join("\"TITLE\":{\n\"TEXTO\":\"")
+        cd = cd.split("</title>").join("\"\n}")
+
+        cd = cd.split("<br>").join("/n\"BR\":{}/n")
+
+        cd = cd.split("<p>").join("\"P\":{\n\"TEXTO\":\"")
+        cd = cd.split("</p>").join("\"\n}")
+
+        cd = cd.split("<h1>").join("\"H1\":{\n\"TEXTO\":\"")
+        cd = cd.split("</h1>").join("\"\n}")
+
+        cd = cd.split("<button>").join("\"BUTTON\":{\n\"TEXTO\":\"")
+        cd = cd.split("</button>").join("\"\n}")
+
+        cd = cd.split("<laber>").join("\"LABEL\":{\n\"TEXTO\":\"")
+        cd = cd.split("</laber>").join("\"\n}")
+
+        cd = cd.split("<input").join("\"IMPUT\":{}")
+
+        cd = cd.split("<body>").join("\"BODY\":{")
+        cd = cd.split("</body>").join("}")
+
+        cd = cd.split("<body").join("\"BODY\":{\n\"STYLE\":")
+        cd = cd.split("</body>").join("}")
+
+        cd = cd.split("<div>").join("\"DIV\":{")
+        cd = cd.split("</div>").join("}")
+
+        cd = cd.split("<div").join("\"DIV\":{\n\"STYLE\":")
+        cd = cd.split("</div>").join("}")
+
+        cd = cd.split("style=").join("")
+        
+        cd = cd.split("\">").join("\",")
+        
+
+        return cd;
     }
 
     analisis_sin(){
+        let cd = "";
         try{
             while(indiceTK < tokens.length){
-                let val = this.comienzo();
-
-                if(val == 1){//mode panic on
-                    while(tokens[indiceTK].lexema != ";" && indiceTK <tokens.length){//vas a reccorer la lista hasta encontrar un ;
-                        indiceTK++;
-                    }
-                    indiceTK++;//aqui te comes la coma
-                }
+                cd += this.comienzo()+"\n";
+            }
+            if(entro){
+                //salida.value = "";
             }
         }catch(error){
-
+            salida.value = "\n\nERROR FATAL\n";
         }
-       
+        salida.value += cd;
     }
 
-    comienzo():number{
-        if(tokens[indiceTK].idTipo == 15 || tokens[indiceTK].idTipo == 16){
+    recuperar(){
+        while(indiceTK < tokens.length && tokens[indiceTK].lexema != ";" && tokens[indiceTK].lexema != "}"){//vas a reccorer la lista hasta encontrar un ;
+            indiceTK++;
+        }
+
+        if(tokens[indiceTK].lexema == ";"){
+            indiceTK++;
+        }
+    }
+
+    tabulacion():string{
+        let cd ="";
+        for(let i=0; i<tabulador; i++){
+            cd += "\t";
+        }
+
+        return cd;
+    }
+
+    comienzo():string{
+        if(tokens[indiceTK].idTipo == 15 || tokens[indiceTK].idTipo == 16){//comentario linea o multi
             return this.comentario();
-        }else if(tokens[indiceTK].lexema == "class"){
-            return this.clase();
+        }else if(tokens[indiceTK].lexema == "Console"){//entra a imprimir
+            return this.consoleWrite();
+        }else if(tokens[indiceTK].lexema == "void"){//entra a void o main
+            return this.metodo();
+        }else if(this.tipo()){//entra crear funcion o declaracion
+            return this.dobleTipo();
+        }else if(tokens[indiceTK].idTipo == 18){//comentario linea o multi
+            return this.tipoAsignacion();
+        }else{
+            this.errorSin();
+            return "";
         }
-
-        return 1;
-
     }
 
-    clase():number{
-        indiceTK++;
-        return 0;
-    }
-
-    comentario():number{
-        /*for(var i = 0; i<tabulador; i++){
-            salida.value +="\t";
-        }*/
-
-        if(tokens[indiceTK].idTipo == 15){
-            salida.value += "#"+tokens[indiceTK].lexema+"\n";
-        }else if( tokens[indiceTK].idTipo == 16){
-            salida.value += "'''"+tokens[indiceTK].lexema+"'''\n";
+    todoMetodos():string{
+        if(tokens[indiceTK].lexema == "Console"){//imprime
+            return this.consoleWrite();
+        }else if(tokens[indiceTK].lexema == "if"){//imprime
+            return this.if();
+        }else if(tokens[indiceTK].lexema == "do"){//imprime
+            return this.do();
+        }else if(tokens[indiceTK].lexema == "while"){//imprime
+            return this.while();
+        }else if(tokens[indiceTK].lexema == "for"){//imprime
+            return this.for();
+        }else if(tokens[indiceTK].lexema == "switch"){//imprime
+            return this.switch();
+        }else if(tokens[indiceTK].idTipo == 15 || tokens[indiceTK].idTipo == 16){
+            return this.comentario();
+        }else if(tokens[indiceTK].idTipo == 18){
+            return this.tipoAsignacion();
+        }else if(this.tipo()){
+            return this.tipoDeclaracion();
+        }else{
+            this.errorSin();
+            return "";
         }
-
-        indiceTK++;
-        return 0;
     }
 
-    consoleWrite():number{
-        if(tokens[indiceTK].lexema == "Console"){
+    todoFunciones():string{
+        if(tokens[indiceTK].lexema == "Console"){//imprime
+            return this.consoleWrite();
+        }else if(tokens[indiceTK].lexema == "if"){//imprime
+            return this.if();
+        }else if(tokens[indiceTK].lexema == "do"){//imprime
+            return this.do();
+        }else if(tokens[indiceTK].lexema == "while"){//imprime
+            return this.while();
+        }else if(tokens[indiceTK].lexema == "for"){//imprime
+            return this.for();
+        }else if(tokens[indiceTK].lexema == "switch"){//imprime
+            return this.switch();
+        }else if(tokens[indiceTK].lexema == "return"){//imprime
+            return this.return();
+        }else if(tokens[indiceTK].idTipo == 15 || tokens[indiceTK].idTipo == 16){
+            return this.comentario();
+        }else if(tokens[indiceTK].idTipo == 18){
+            return this.tipoAsignacion();
+        }else if(this.tipo()){
+            return this.tipoDeclaracion();
+        }else{
+            this.errorSin();
+            return "";
+        }
+    }
+
+    todoIW():string{
+        if(tokens[indiceTK].lexema == "Console"){//imprime
+            return this.consoleWrite();
+        }else if(tokens[indiceTK].lexema == "if"){//imprime
+            return this.if();
+        }else if(tokens[indiceTK].lexema == "do"){//imprime
+            return this.do();
+        }else if(tokens[indiceTK].lexema == "while"){//imprime
+            return this.while();
+        }else if(tokens[indiceTK].lexema == "for"){//imprime
+            return this.for();
+        }else if(tokens[indiceTK].lexema == "switch"){//imprime
+            return this.switch();
+        }else if(tokens[indiceTK].lexema == "break"){//imprime
+            return this.break();
+        }else if(tokens[indiceTK].idTipo == 15 || tokens[indiceTK].idTipo == 16){
+            return this.comentario();
+        }else if(tokens[indiceTK].idTipo == 18){
+            return this.tipoAsignacion();
+        }else if(this.tipo()){
+            return this.tipoDeclaracion();
+        }else{
+            this.errorSin();
+            return "";
+        }
+    }
+
+    todoFW():string{
+        if(tokens[indiceTK].lexema == "Console"){//imprime
+            return this.consoleWrite();
+        }else if(tokens[indiceTK].lexema == "if"){//imprime
+            return this.if();
+        }else if(tokens[indiceTK].lexema == "do"){//imprime
+            return this.do();
+        }else if(tokens[indiceTK].lexema == "while"){//imprime
+            return this.while();
+        }else if(tokens[indiceTK].lexema == "for"){//imprime
+            return this.for();
+        }else if(tokens[indiceTK].lexema == "switch"){//imprime
+            return this.switch();
+        }else if(tokens[indiceTK].lexema == "break"){//imprime
+            return this.break();
+        }else if(tokens[indiceTK].lexema == "continue"){//imprime
+            return this.continue();
+        }else if(tokens[indiceTK].idTipo == 15 || tokens[indiceTK].idTipo == 16){
+            return this.comentario();
+        }else if(tokens[indiceTK].idTipo == 18){
+            return this.tipoAsignacion();
+        }else if(this.tipo()){
+            return this.tipoDeclaracion();
+        }else{
+            this.errorSin();
+            return "";
+        }
+    }
+
+    dobleTipo():string{
+        let cd = this.tabulacion();
+        if(this.tipo()){
             indiceTK++;
         }else{
             this.errorSin();
-            return 1;
+            return "";
         }
-        if(tokens[indiceTK].lexema == "."){
+
+        let idtemp = "";
+        if(tokens[indiceTK].idTipo == 18){
+            idtemp = tokens[indiceTK].lexema;
             indiceTK++;
         }else{
             this.errorSin();
-            return 1;
+            return "";
         }
-        if(tokens[indiceTK].lexema == "Write"){
+
+        if(tokens[indiceTK].lexema == "("){
+            indiceTK++;
+            cd += "def "+ idtemp + "(";
+            if(tokens[indiceTK].lexema != ")"){
+                while(indiceTK < tokens.length && tokens[indiceTK].lexema != ")"){
+                    if(this.tipo()){//si es un int etc...
+                        indiceTK++;
+                    }else {
+                        this.errorSin();
+                        return "";
+                    }
+        
+                    if(tokens[indiceTK].idTipo == 18){//si es id
+                        cd += tokens[indiceTK].lexema;
+                        indiceTK++;
+                    }else {
+                        this.errorSin();
+                        return "";
+                    }
+        
+                    if(tokens[indiceTK].lexema == ","){//si vienen mas con ,
+                        cd += ", ";
+                        indiceTK++;
+                        if(tokens[indiceTK].lexema == ")"){//si entra lo siguiente no debe ser )
+                            this.errorSin();
+                            return "";
+                        }
+                    }else if(tokens[indiceTK].lexema != ")"){
+                        this.errorSin();
+                        return "";
+                    }
+                    
+                }
+            }
+    
+            if(tokens[indiceTK].lexema == ")"){
+                cd += ")";
+                indiceTK++;
+            }else {
+                this.errorSin();
+                return "";
+            }
+    
+            if(tokens[indiceTK].lexema == "{"){
+                cd += ":\n";
+                indiceTK++;
+    
+            }else {
+                this.errorSin();
+                return "";
+            }
+    
+            tabulador++;
+            while(indiceTK < tokens.length && tokens[indiceTK].lexema != "}"){
+                cd += this.todoFunciones();
+            }
+            tabulador--;
+    
+            if(tokens[indiceTK].lexema == "}"){
+                cd += "\n";
+                indiceTK++;
+            }else {
+                this.errorSin();
+                return "";
+            }
+        }else if(tokens[indiceTK].lexema == "," || tokens[indiceTK].lexema == ";"){
+            cd += idtemp;
+
+            if(tokens[indiceTK].lexema != ";"){
+                while(indiceTK < tokens.length && tokens[indiceTK].lexema != ";"){
+                    if(tokens[indiceTK].lexema == ","){
+                        cd += ", "
+                        indiceTK++;
+
+                        if(tokens[indiceTK].idTipo == 18){
+                            cd += tokens[indiceTK].lexema;
+                            indiceTK++;
+                        }else{
+                            this.errorSin();
+                            return "";
+                        }
+
+                        if(tokens[indiceTK].lexema == "="){
+                            cd += " = ";
+                            indiceTK++;
+
+                            if(tokens[indiceTK].idTipo == 18 || tokens[indiceTK].idTipo == 20 ||
+                                tokens[indiceTK].idTipo == 21 || tokens[indiceTK].idTipo == 29 ||
+                                tokens[indiceTK].lexema == "true" || tokens[indiceTK].lexema == "false"){
+                                cd += tokens[indiceTK].lexema;
+                                indiceTK++;
+                            }else{
+                                this.errorSin();
+                                return "";
+                            }
+
+                            if(tokens[indiceTK].lexema != ";"){
+                                this.errorSin();
+                                return "";
+                            }
+
+                        }
+
+                    }else{
+                        this.errorSin();
+                        return "";
+                    }
+
+
+                }
+            }
+
+            if(tokens[indiceTK].lexema == ";"){
+                cd += ";";
+                indiceTK++;
+            }else{
+                this.errorSin();
+                return "";
+            }
+
+        }else{
+            this.errorSin();
+            return "";
+        }
+
+        return cd;
+    }
+
+    tipoDeclaracion():string{
+        let cd = this.tabulacion();
+        if(this.tipo()){
             indiceTK++;
         }else{
             this.errorSin();
-            return 1;
+            return "";
         }
+
+        if(tokens[indiceTK].idTipo == 18){
+            cd += tokens[indiceTK].lexema;
+            indiceTK++;
+        }else{
+            this.errorSin();
+            return "";
+        }
+        
+        if(tokens[indiceTK].lexema != ";"){
+            while(indiceTK < tokens.length && tokens[indiceTK].lexema != ";"){
+                if(tokens[indiceTK].lexema == "="){
+                    cd += " = ";
+                    indiceTK++;
+
+                    while(indiceTK < tokens.length && tokens[indiceTK].lexema != ";"){
+                        if(tokens[indiceTK].idTipo == 18 || tokens[indiceTK].idTipo == 20 ||
+                            tokens[indiceTK].idTipo == 21 || tokens[indiceTK].idTipo == 29 ||
+                            tokens[indiceTK].lexema == "true" || tokens[indiceTK].lexema == "false"){
+                            cd += tokens[indiceTK].lexema;
+                            indiceTK++;
+                
+                            if(tokens[indiceTK].idTipo == 1 || tokens[indiceTK].idTipo == 2 ||
+                                tokens[indiceTK].idTipo == 3 || tokens[indiceTK].idTipo == 4){
+                                cd += tokens[indiceTK].lexema;
+                                indiceTK++;
+                    
+                                if(tokens[indiceTK].lexema == ";"){
+                                    this.errorSin();
+                                    return "";
+                                }
+
+                            }else if(tokens[indiceTK].lexema != ";"){
+                                this.errorSin();
+                                return "";
+                            }
+                
+                        }else{
+                            this.errorSin();
+                            return "";
+                        }
+                    }
+
+                }else if(tokens[indiceTK].lexema == ","){
+                    cd += ", "
+                    indiceTK++;
+
+                    if(tokens[indiceTK].idTipo == 18){
+                        cd += tokens[indiceTK].lexema;
+                        indiceTK++;
+                    }else{
+                        this.errorSin();
+                        return "";
+                    }
+
+                    if(tokens[indiceTK].lexema == ";"){
+                        this.errorSin();
+                        return "";
+                    }
+
+                }else{
+                    this.errorSin();
+                    return "";
+                }
+
+
+            }
+        }
+
+        if(tokens[indiceTK].lexema == ";"){
+            cd += "\n";
+            indiceTK++;
+        }else{
+            this.errorSin();
+            return "";
+        }
+
+        return cd;
+    }
+
+    tipoAsignacion():string{
+        let cd = this.tabulacion();
+        
+        if(tokens[indiceTK].idTipo == 18){
+            cd += tokens[indiceTK].lexema;
+            indiceTK++;
+        }else{
+            this.errorSin();
+            return "";
+        }
+
+        if(tokens[indiceTK].lexema == "="){
+            cd += tokens[indiceTK].lexema;
+            indiceTK++;
+        }else{
+            this.errorSin();
+            return "";
+        }
+        
+        if(tokens[indiceTK].lexema != ";"){
+            while(indiceTK < tokens.length && tokens[indiceTK].lexema != ";"){
+                if(tokens[indiceTK].idTipo == 18 || tokens[indiceTK].idTipo == 20 ||
+                    tokens[indiceTK].idTipo == 21 || tokens[indiceTK].idTipo == 29 ||
+                    tokens[indiceTK].lexema == "true" || tokens[indiceTK].lexema == "false"){
+                    cd += tokens[indiceTK].lexema;
+                    indiceTK++;
+        
+                    if(tokens[indiceTK].idTipo == 1 || tokens[indiceTK].idTipo == 2 ||
+                        tokens[indiceTK].idTipo == 3 || tokens[indiceTK].idTipo == 4){
+                        cd += tokens[indiceTK].lexema;
+                        indiceTK++;
+            
+                        if(tokens[indiceTK].lexema == ";"){
+                            this.errorSin();
+                            return "";
+                        }
+
+                    }else if(tokens[indiceTK].lexema != ";"){
+                        this.errorSin();
+                        return "";
+                    }
+        
+                }else{
+                    this.errorSin();
+                    return "";
+                }
+            }
+        }else{
+            this.errorSin();
+            return "";
+        }
+        
+        if(tokens[indiceTK].lexema == ";"){
+            cd += "\n";
+            indiceTK++;
+        }else{
+            this.errorSin();
+            return "";
+        }
+
+        return cd;
+    }
+
+    metodo():string{
+        let cd = this.tabulacion();
+        
+        if(tokens[indiceTK].lexema == "void"){
+            cd += "def ";
+            indiceTK++;
+        }else {
+            this.errorSin();
+            return "";
+        }
+
+        let main = false;
+        if(tokens[indiceTK].lexema == "main"){
+            cd += "main";
+            main = true;
+            indiceTK++;
+        }else if(tokens[indiceTK].idTipo == 18){
+            cd += tokens[indiceTK].lexema;
+            indiceTK++;
+        }else {
+            this.errorSin();
+            return "";
+        }
+
+        if(tokens[indiceTK].lexema == "("){
+            cd += "(";
+            indiceTK++;
+        }else {
+            this.errorSin();
+            return "";
+        }
+
+        if(!main){
+            if(tokens[indiceTK].lexema != ")"){
+                while(indiceTK < tokens.length && tokens[indiceTK].lexema != ")"){
+                    if(this.tipo()){//si es un int etc...
+                        //cd += "var";
+                        indiceTK++;
+                    }else {
+                        this.errorSin();
+                        return "";
+                    }
+        
+                    if(tokens[indiceTK].idTipo == 18){//si es id
+                        cd += tokens[indiceTK].lexema;
+                        indiceTK++;
+                    }else {
+                        this.errorSin();
+                        return "";
+                    }
+        
+                    if(tokens[indiceTK].lexema == ","){//si vienen mas con ,
+                        cd += ", ";
+                        indiceTK++;
+                        if(tokens[indiceTK].lexema == ")"){//si entra lo siguiente no debe ser )
+                            this.errorSin();
+                            return "";
+                        }
+                    }else if(tokens[indiceTK].lexema != ")"){
+                        this.errorSin();
+                        return "";
+                    }
+                    
+                }
+            }
+        }
+
+        if(tokens[indiceTK].lexema == ")"){
+            cd += ")";
+            indiceTK++;
+        }else {
+            this.errorSin();
+            tabulador--;
+            return "";
+        }
+
+        if(tokens[indiceTK].lexema == "{"){
+            cd += ":\n";
+            indiceTK++;
+
+        }else {
+            this.errorSin();
+            return "";
+        }
+
+        tabulador++;
+        while(indiceTK < tokens.length && tokens[indiceTK].lexema != "}"){
+            cd += this.todoMetodos();
+        }
+        tabulador--;
+
+        if(tokens[indiceTK].lexema == "}"){
+            cd += "\n"
+            if(main){
+                cd += this.tabulacion();
+                cd += "if __name__=\"__main__\":\n";
+                tabulador++;
+                cd += this.tabulacion();
+                tabulador--;
+                cd += "main()\n";
+            }
+            indiceTK++;
+        }else {
+            this.errorSin();
+            return "";
+        }
+
+        return cd;
+    }
+
+    sentencias(){
+        if(tokens[indiceTK].lexema == "if"){
+            return this.if();
+        }else if(tokens[indiceTK].lexema == "for"){
+            return this.for();
+        }else if(tokens[indiceTK].lexema == "do"){
+            return this.do();
+        }else if(tokens[indiceTK].lexema == "while"){
+            return this.while();
+        }else if(tokens[indiceTK].lexema == "switch"){
+            return "";
+        }else if(tokens[indiceTK].lexema == "Console"){
+            return this.consoleWrite();
+        }else{
+            this.errorSin();
+            return "";
+        }
+        
+    }
+
+    if():string{
+        let cd = this.tabulacion();
+        if(tokens[indiceTK].lexema == "if"){
+            cd += "if ";
+            indiceTK++;
+        }else{
+            this.errorSin();
+            return "";
+        }
+
         if(tokens[indiceTK].lexema == "("){
             indiceTK++;
         }else{
             this.errorSin();
-            return 1;
+            return "";
         }
-        while(tokens[indiceTK].lexema != ")"){
-            if(tokens[indiceTK].idTipo == 20 || tokens[indiceTK].idTipo == 29){
-                indiceTK++;
-            }else{
-                this.errorSin();
-                return 1;
+
+        if(tokens[indiceTK].lexema != ")"){
+            while(indiceTK < tokens.length && tokens[indiceTK].lexema != ")"){
+                if(tokens[indiceTK].lexema == "true" || tokens[indiceTK].lexema == "false" ||
+                   tokens[indiceTK].idTipo == 18){
+                    cd += tokens[indiceTK].lexema + " ";
+                    indiceTK++;
+        
+                    if(tokens[indiceTK].idTipo == 5 || tokens[indiceTK].idTipo == 6 ||
+                        tokens[indiceTK].idTipo == 22 || tokens[indiceTK].idTipo == 23 ||
+                        tokens[indiceTK].idTipo == 25 || tokens[indiceTK].idTipo == 26){
+                        cd += tokens[indiceTK].lexema + " ";
+                        indiceTK++;
+        
+                        if(tokens[indiceTK].idTipo == 18 || tokens[indiceTK].idTipo == 29 ||
+                            tokens[indiceTK].lexema == "true" || tokens[indiceTK].lexema == "false"){
+                            cd += tokens[indiceTK].lexema + " ";
+                            indiceTK++;
+                        }else if(tokens[indiceTK].idTipo == 20){
+                            cd += "\""+tokens[indiceTK].lexema + "\" ";
+                            indiceTK++;
+                        }else if(tokens[indiceTK].idTipo == 21){
+                            cd += "'"+tokens[indiceTK].lexema + "' ";
+                            indiceTK++;
+                        }else{
+                            this.errorSin();
+                            return "";
+                        }
+                    }
+                    
+                }else{
+                    
+                    if(tokens[indiceTK].idTipo == 29){
+                        cd += tokens[indiceTK].lexema + " ";
+                        indiceTK++;
+                    }else if(tokens[indiceTK].idTipo == 20){
+                        cd += "\""+tokens[indiceTK].lexema + "\" ";
+                        indiceTK++;
+                    }else if(tokens[indiceTK].idTipo == 21){
+                        cd += "\""+tokens[indiceTK].lexema + "\" ";
+                        indiceTK++;
+                    }else{
+                        this.errorSin();
+                        return "";
+                    }
+        
+                    if(tokens[indiceTK].idTipo == 5 || tokens[indiceTK].idTipo == 6 ||
+                        tokens[indiceTK].idTipo == 22 || tokens[indiceTK].idTipo == 23 ||
+                        tokens[indiceTK].idTipo == 25 || tokens[indiceTK].idTipo == 26){
+                        cd += tokens[indiceTK].lexema + " ";
+                        indiceTK++;
+                    }else{
+                        this.errorSin();
+                        return "";
+                    }
+        
+                    if(tokens[indiceTK].idTipo == 18 || tokens[indiceTK].idTipo == 29 ||
+                        tokens[indiceTK].lexema == "true" || tokens[indiceTK].lexema == "false"){
+                        cd += tokens[indiceTK].lexema + " ";
+                        indiceTK++;
+                    }else if(tokens[indiceTK].idTipo == 20){
+                        cd += "\""+tokens[indiceTK].lexema + "\" ";
+                        indiceTK++;
+                    }else if(tokens[indiceTK].idTipo == 21){
+                        cd += "'"+tokens[indiceTK].lexema + "' ";
+                        indiceTK++;
+                    }else{
+                        this.errorSin();
+                        return "";
+                    }
+                }
+
+                if(tokens[indiceTK].lexema == "||" || tokens[indiceTK].lexema == "&&"){
+                    cd += tokens[indiceTK].lexema + " ";
+                    indiceTK++;
+                }else if(tokens[indiceTK].lexema != ")"){
+                    this.errorSin();
+                    return "";
+                }
+                
             }
-            if(tokens[indiceTK].lexema == "+"){
-                indiceTK++;
-            }else if(tokens[indiceTK].lexema != ")"){
-                this.errorSin();
-                return 1;
-            }
+        }else{
+            this.errorSin();
+            return "";
         }
+
         if(tokens[indiceTK].lexema == ")"){
             indiceTK++;
         }else{
             this.errorSin();
-            return 1;
+            return "";
         }
+
+        if(tokens[indiceTK].lexema == "{"){
+            cd += ":\n";
+            indiceTK++;
+        }else{
+            this.errorSin();
+            return "";
+        }
+
+        tabulador++;
+        while(indiceTK < tokens.length && tokens[indiceTK].lexema != "}"){
+            cd += this.todoIW();
+        }
+        tabulador--;
+
+        if(tokens[indiceTK].lexema == "}"){
+            cd += "\n";
+            indiceTK++;
+        }else{
+            this.errorSin();
+            return "";
+        }
+
+        if(tokens[indiceTK].lexema == "else"){
+            indiceTK++;
+            if(tokens[indiceTK].lexema == "if"){
+                cd += this.elseif();
+            }else{
+                if(tokens[indiceTK].lexema == "{"){
+                    cd += this.tabulacion() + "else:\n"
+                    indiceTK++;
+                }else{
+                    this.errorSin();
+                    return "";
+                }
+        
+                tabulador++;
+                while(indiceTK < tokens.length && tokens[indiceTK].lexema != "}"){
+                    cd += this.todoIW();
+                }
+                tabulador--;
+
+                if(tokens[indiceTK].lexema == "}"){
+                    cd += "\n";
+                    indiceTK++;
+                }else{
+                    this.errorSin();
+                    return "";
+                }
+            }
+        }
+
+        return cd;
+    }
+
+    elseif():string{
+        let cd = this.tabulacion();
+        if(tokens[indiceTK].lexema == "if"){
+            cd += "elif ";
+            indiceTK++;
+        }else{
+            this.errorSin();
+            return "";
+        }
+
+        if(tokens[indiceTK].lexema == "("){
+            indiceTK++;
+        }else{
+            this.errorSin();
+            return "";
+        }
+
+        if(tokens[indiceTK].lexema != ")"){
+            while(indiceTK < tokens.length && tokens[indiceTK].lexema != ")"){
+                if(tokens[indiceTK].lexema == "true" || tokens[indiceTK].lexema == "false" ||
+                   tokens[indiceTK].idTipo == 18){
+                    cd += tokens[indiceTK].lexema + " ";
+                    indiceTK++;
+        
+                    if(tokens[indiceTK].idTipo == 5 || tokens[indiceTK].idTipo == 6 ||
+                        tokens[indiceTK].idTipo == 22 || tokens[indiceTK].idTipo == 23 ||
+                        tokens[indiceTK].idTipo == 25 || tokens[indiceTK].idTipo == 26){
+                        cd += tokens[indiceTK].lexema + " ";
+                        indiceTK++;
+        
+                        if(tokens[indiceTK].idTipo == 18 || tokens[indiceTK].idTipo == 29 ||
+                            tokens[indiceTK].lexema == "true" || tokens[indiceTK].lexema == "false"){
+                            cd += tokens[indiceTK].lexema + " ";
+                            indiceTK++;
+                        }else if(tokens[indiceTK].idTipo == 20){
+                            cd += "\""+tokens[indiceTK].lexema + "\" ";
+                            indiceTK++;
+                        }else if(tokens[indiceTK].idTipo == 21){
+                            cd += "'"+tokens[indiceTK].lexema + "' ";
+                            indiceTK++;
+                        }else{
+                            this.errorSin();
+                            return "";
+                        }
+                    }
+                    
+                }else{
+                    
+                    if(tokens[indiceTK].idTipo == 29){
+                        cd += tokens[indiceTK].lexema + " ";
+                        indiceTK++;
+                    }else if(tokens[indiceTK].idTipo == 20){
+                        cd += "\""+tokens[indiceTK].lexema + "\" ";
+                        indiceTK++;
+                    }else if(tokens[indiceTK].idTipo == 21){
+                        cd += "\""+tokens[indiceTK].lexema + "\" ";
+                        indiceTK++;
+                    }else{
+                        this.errorSin();
+                        return "";
+                    }
+        
+                    if(tokens[indiceTK].idTipo == 5 || tokens[indiceTK].idTipo == 6 ||
+                        tokens[indiceTK].idTipo == 22 || tokens[indiceTK].idTipo == 23 ||
+                        tokens[indiceTK].idTipo == 25 || tokens[indiceTK].idTipo == 26){
+                        cd += tokens[indiceTK].lexema + " ";
+                        indiceTK++;
+                    }else{
+                        this.errorSin();
+                        return "";
+                    }
+        
+                    if(tokens[indiceTK].idTipo == 18 || tokens[indiceTK].idTipo == 29 ||
+                        tokens[indiceTK].lexema == "true" || tokens[indiceTK].lexema == "false"){
+                        cd += tokens[indiceTK].lexema + " ";
+                        indiceTK++;
+                    }else if(tokens[indiceTK].idTipo == 20){
+                        cd += "\""+tokens[indiceTK].lexema + "\" ";
+                        indiceTK++;
+                    }else if(tokens[indiceTK].idTipo == 21){
+                        cd += "'"+tokens[indiceTK].lexema + "' ";
+                        indiceTK++;
+                    }else{
+                        this.errorSin();
+                        return "";
+                    }
+                }
+
+                if(tokens[indiceTK].lexema == "||" || tokens[indiceTK].lexema == "&&"){
+                    cd += tokens[indiceTK].lexema + " ";
+                    indiceTK++;
+                }else if(tokens[indiceTK].lexema != ")"){
+                    this.errorSin();
+                    return "";
+                }
+                
+            }
+        }else{
+            this.errorSin();
+            return "";
+        }
+
+        if(tokens[indiceTK].lexema == ")"){
+            indiceTK++;
+        }else{
+            this.errorSin();
+            return "";
+        }
+
+        if(tokens[indiceTK].lexema == "{"){
+            cd += ":\n";
+            indiceTK++;
+        }else{
+            this.errorSin();
+            return "";
+        }
+
+        tabulador++;
+        while(indiceTK < tokens.length && tokens[indiceTK].lexema != "}"){
+            cd += this.todoIW();
+        }
+        tabulador--;
+
+        if(tokens[indiceTK].lexema == "}"){
+            cd += "\n";
+            indiceTK++;
+        }else{
+            this.errorSin();
+            return "";
+        }
+
+        if(tokens[indiceTK].lexema == "else"){
+            indiceTK++;
+            if(tokens[indiceTK].lexema == "if"){
+                cd += this.elseif();
+            }else{
+                if(tokens[indiceTK].lexema == "{"){
+                    cd += this.tabulacion() + "else:\n"
+                    indiceTK++;
+                }else{
+                    this.errorSin();
+                    return "";
+                }
+        
+                tabulador++;
+                while(indiceTK < tokens.length && tokens[indiceTK].lexema != "}"){
+                    cd += this.todoIW();
+                }
+                tabulador--;
+
+                if(tokens[indiceTK].lexema == "}"){
+                    cd += "\n";
+                    indiceTK++;
+                }else{
+                    this.errorSin();
+                    return "";
+                }
+            }
+        }
+
+        return cd;
+    }
+
+    for():string{
+        let cd = this.tabulacion();
+
+        if(tokens[indiceTK].lexema == "for"){
+            cd += "for ";
+            indiceTK++;
+        }else{
+            this.errorSin();
+            return "";
+        }
+
+        if(tokens[indiceTK].lexema == "("){
+            indiceTK++;
+        }else{
+            this.errorSin();
+            return "";
+        }
+
+        if(this.tipo()){
+            indiceTK++;
+        }
+
+        if(tokens[indiceTK].idTipo == 18){
+            cd += tokens[indiceTK].lexema;
+            indiceTK++;
+        }else{
+            this.errorSin();
+            return "";
+        }
+
+        if(tokens[indiceTK].lexema == "="){
+            indiceTK++;
+        }else{
+            this.errorSin();
+            return "";
+        }
+
+        if(tokens[indiceTK].idTipo == 29 || tokens[indiceTK].idTipo == 18){
+            cd += " in range ("+tokens[indiceTK].lexema+", ";
+            indiceTK++;
+        }else{
+            this.errorSin();
+            return "";
+        }
+    
         if(tokens[indiceTK].lexema == ";"){
             indiceTK++;
         }else{
             this.errorSin();
-            return 1;
+            return "";
         }
-        return 0;
+
+        if(tokens[indiceTK].idTipo == 18){
+            indiceTK++;
+
+            if(tokens[indiceTK].idTipo == 5 || tokens[indiceTK].idTipo == 6 ||
+                tokens[indiceTK].idTipo == 22 || tokens[indiceTK].idTipo == 23){
+                indiceTK++;
+            }else{
+                this.errorSin();
+                return "";
+            }
+
+            if(tokens[indiceTK].idTipo == 29){
+                cd += tokens[indiceTK].lexema;
+                indiceTK++;
+            }else{
+                this.errorSin();
+                return "";
+            }
+
+        }else if(tokens[indiceTK].idTipo == 29){
+            cd += tokens[indiceTK].lexema;
+            indiceTK++;
+
+            if(tokens[indiceTK].idTipo == 5 || tokens[indiceTK].idTipo == 6 ||
+                tokens[indiceTK].idTipo == 22 || tokens[indiceTK].idTipo == 23){
+                indiceTK++;
+            }else{
+                this.errorSin();
+                return "";
+            }
+
+            if(tokens[indiceTK].idTipo == 18){
+                indiceTK++;
+            }else{
+                this.errorSin();
+                return "";
+            }
+
+        }else{
+            this.errorSin();
+            return "";
+        }
+
+        if(tokens[indiceTK].lexema == ";"){
+            indiceTK++;
+        }else{
+            this.errorSin();
+            return "";
+        }
+
+        if(tokens[indiceTK].idTipo == 18){
+            indiceTK++;
+        }else{
+            this.errorSin();
+            return "";
+        }
+
+        if(tokens[indiceTK].lexema == "+"){
+            indiceTK++;
+        }else{
+            this.errorSin();
+            return "";
+        }
+
+        if(tokens[indiceTK].lexema == "+"){
+            indiceTK++;
+        }else{
+            this.errorSin();
+            return "";
+        }
+
+        if(tokens[indiceTK].lexema == ")"){
+            cd += ")";
+            indiceTK++;
+        }else{
+            this.errorSin();
+            return "";
+        }
+
+        if(tokens[indiceTK].lexema == "{"){
+            cd += ":\n"
+            indiceTK++;
+        }else{
+            this.errorSin();
+            return "";
+        }
+
+        tabulador++;
+        while(indiceTK < tokens.length && tokens[indiceTK].lexema != "}"){
+            cd += this.todoFW();
+        }
+        tabulador--;
+
+        if(tokens[indiceTK].lexema == "}"){
+            cd += "\n";
+            indiceTK++;
+        }else{
+            this.errorSin();
+            return "";
+        }
+        
+        return cd;
+    }
+
+    while():string{
+        let cd = this.tabulacion();
+
+        if(tokens[indiceTK].lexema == "while"){
+            cd += "while ";
+            indiceTK++;
+        }else{
+            this.errorSin();
+            return "";
+        }
+
+        if(tokens[indiceTK].lexema == "("){
+            indiceTK++;
+        }else{
+            this.errorSin();
+            return "";
+        }
+
+        if(tokens[indiceTK].lexema != ")"){
+            while(indiceTK < tokens.length && tokens[indiceTK].lexema != ")"){
+                if(tokens[indiceTK].lexema == "true" || tokens[indiceTK].lexema == "false" ||
+                   tokens[indiceTK].idTipo == 18){
+                    cd += tokens[indiceTK].lexema + " ";
+                    indiceTK++;
+        
+                    if(tokens[indiceTK].idTipo == 5 || tokens[indiceTK].idTipo == 6 ||
+                        tokens[indiceTK].idTipo == 22 || tokens[indiceTK].idTipo == 23 ||
+                        tokens[indiceTK].idTipo == 25 || tokens[indiceTK].idTipo == 26){
+                        cd += tokens[indiceTK].lexema + " ";
+                        indiceTK++;
+        
+                        if(tokens[indiceTK].idTipo == 18 || tokens[indiceTK].idTipo == 29 ||
+                            tokens[indiceTK].lexema == "true" || tokens[indiceTK].lexema == "false"){
+                            cd += tokens[indiceTK].lexema + " ";
+                            indiceTK++;
+                        }else if(tokens[indiceTK].idTipo == 20){
+                            cd += "\""+tokens[indiceTK].lexema + "\" ";
+                            indiceTK++;
+                        }else if(tokens[indiceTK].idTipo == 21){
+                            cd += "'"+tokens[indiceTK].lexema + "' ";
+                            indiceTK++;
+                        }else{
+                            this.errorSin();
+                            return "";
+                        }
+                    }
+                    
+                }else{
+                    
+                    if(tokens[indiceTK].idTipo == 29){
+                        cd += tokens[indiceTK].lexema + " ";
+                        indiceTK++;
+                    }else if(tokens[indiceTK].idTipo == 20){
+                        cd += "\""+tokens[indiceTK].lexema + "\" ";
+                        indiceTK++;
+                    }else if(tokens[indiceTK].idTipo == 21){
+                        cd += "\""+tokens[indiceTK].lexema + "\" ";
+                        indiceTK++;
+                    }else{
+                        this.errorSin();
+                        return "";
+                    }
+        
+                    if(tokens[indiceTK].idTipo == 5 || tokens[indiceTK].idTipo == 6 ||
+                        tokens[indiceTK].idTipo == 22 || tokens[indiceTK].idTipo == 23 ||
+                        tokens[indiceTK].idTipo == 25 || tokens[indiceTK].idTipo == 26){
+                        cd += tokens[indiceTK].lexema + " ";
+                        indiceTK++;
+                    }else{
+                        this.errorSin();
+                        return "";
+                    }
+        
+                    if(tokens[indiceTK].idTipo == 18 || tokens[indiceTK].idTipo == 29 ||
+                        tokens[indiceTK].lexema == "true" || tokens[indiceTK].lexema == "false"){
+                        cd += tokens[indiceTK].lexema + " ";
+                        indiceTK++;
+                    }else if(tokens[indiceTK].idTipo == 20){
+                        cd += "\""+tokens[indiceTK].lexema + "\" ";
+                        indiceTK++;
+                    }else if(tokens[indiceTK].idTipo == 21){
+                        cd += "'"+tokens[indiceTK].lexema + "' ";
+                        indiceTK++;
+                    }else{
+                        this.errorSin();
+                        return "";
+                    }
+                }
+
+                if(tokens[indiceTK].lexema == "||" || tokens[indiceTK].lexema == "&&"){
+                    cd += tokens[indiceTK].lexema + " ";
+                    indiceTK++;
+                }else if(tokens[indiceTK].lexema != ")"){
+                    this.errorSin();
+                    return "";
+                }
+                
+            }
+        }else{
+            this.errorSin();
+            return "";
+        }
+
+        if(tokens[indiceTK].lexema == ")"){
+            indiceTK++;
+        }else{
+            this.errorSin();
+            return "";
+        }
+
+        if(tokens[indiceTK].lexema == "{"){
+            cd += ":\n";
+            indiceTK++;
+        }else{
+            this.errorSin();
+            return "";
+        }
+
+        tabulador++;
+        while(indiceTK < tokens.length && tokens[indiceTK].lexema != "}"){
+            cd += this.todoFW();
+        }
+        tabulador--;
+
+        if(tokens[indiceTK].lexema == "}"){
+            cd += "\n";
+            indiceTK++;
+        }else{
+            this.errorSin();
+            return "";
+        }
+
+        return cd;
+    }
+
+    do():string{
+        let cd = this.tabulacion();
+
+        if(tokens[indiceTK].lexema == "do"){
+            indiceTK++;
+        }else{
+            this.errorSin();
+            return "";
+        }
+
+        if(tokens[indiceTK].lexema == "{"){
+            cd += "while true:\n"
+            indiceTK++;
+        }else{
+            this.errorSin();
+            return "";
+        }
+
+        tabulador++;
+        while(indiceTK < tokens.length && tokens[indiceTK].lexema != "}"){
+            cd += this.todoFW();
+        }
+        tabulador--;
+
+        if(tokens[indiceTK].lexema == "}"){
+            indiceTK++;
+        }else{
+            this.errorSin();
+            return "";
+        }
+
+        if(tokens[indiceTK].lexema == "while"){
+            indiceTK++;
+        }else{
+            this.errorSin();
+            return "";
+        }
+
+        if(tokens[indiceTK].lexema == "("){
+            tabulador++;
+            cd += this.tabulacion()+"if ";
+            indiceTK++;
+            tabulador--;
+        }else{
+            this.errorSin();
+            return "";
+        }
+        
+        if(tokens[indiceTK].lexema != ")"){
+            while(indiceTK < tokens.length && tokens[indiceTK].lexema != ")"){
+                if(tokens[indiceTK].lexema == "true" || tokens[indiceTK].lexema == "false" ||
+                   tokens[indiceTK].idTipo == 18){
+                    cd += tokens[indiceTK].lexema + " ";
+                    indiceTK++;
+        
+                    if(tokens[indiceTK].idTipo == 5 || tokens[indiceTK].idTipo == 6 ||
+                        tokens[indiceTK].idTipo == 22 || tokens[indiceTK].idTipo == 23 ||
+                        tokens[indiceTK].idTipo == 25 || tokens[indiceTK].idTipo == 26){
+                        cd += tokens[indiceTK].lexema + " ";
+                        indiceTK++;
+        
+                        if(tokens[indiceTK].idTipo == 18 || tokens[indiceTK].idTipo == 29 ||
+                            tokens[indiceTK].lexema == "true" || tokens[indiceTK].lexema == "false"){
+                            cd += tokens[indiceTK].lexema + " ";
+                            indiceTK++;
+                        }else if(tokens[indiceTK].idTipo == 20){
+                            cd += "\""+tokens[indiceTK].lexema + "\" ";
+                            indiceTK++;
+                        }else if(tokens[indiceTK].idTipo == 21){
+                            cd += "'"+tokens[indiceTK].lexema + "' ";
+                            indiceTK++;
+                        }else{
+                            this.errorSin();
+                            return "";
+                        }
+                    }
+                    
+                }else{
+                    
+                    if(tokens[indiceTK].idTipo == 29){
+                        cd += tokens[indiceTK].lexema + " ";
+                        indiceTK++;
+                    }else if(tokens[indiceTK].idTipo == 20){
+                        cd += "\""+tokens[indiceTK].lexema + "\" ";
+                        indiceTK++;
+                    }else if(tokens[indiceTK].idTipo == 21){
+                        cd += "\""+tokens[indiceTK].lexema + "\" ";
+                        indiceTK++;
+                    }else{
+                        this.errorSin();
+                        return "";
+                    }
+        
+                    if(tokens[indiceTK].idTipo == 5 || tokens[indiceTK].idTipo == 6 ||
+                        tokens[indiceTK].idTipo == 22 || tokens[indiceTK].idTipo == 23 ||
+                        tokens[indiceTK].idTipo == 25 || tokens[indiceTK].idTipo == 26){
+                        cd += tokens[indiceTK].lexema + " ";
+                        indiceTK++;
+                    }else{
+                        this.errorSin();
+                        return "";
+                    }
+        
+                    if(tokens[indiceTK].idTipo == 18 || tokens[indiceTK].idTipo == 29 ||
+                        tokens[indiceTK].lexema == "true" || tokens[indiceTK].lexema == "false"){
+                        cd += tokens[indiceTK].lexema + " ";
+                        indiceTK++;
+                    }else if(tokens[indiceTK].idTipo == 20){
+                        cd += "\""+tokens[indiceTK].lexema + "\" ";
+                        indiceTK++;
+                    }else if(tokens[indiceTK].idTipo == 21){
+                        cd += "'"+tokens[indiceTK].lexema + "' ";
+                        indiceTK++;
+                    }else{
+                        this.errorSin();
+                        return "";
+                    }
+                }
+
+                if(tokens[indiceTK].lexema == "||" || tokens[indiceTK].lexema == "&&"){
+                    cd += tokens[indiceTK].lexema + " ";
+                    indiceTK++;
+                }else if(tokens[indiceTK].lexema != ")"){
+                    this.errorSin();
+                    return "";
+                }
+                
+            }
+        }else{
+            this.errorSin();
+            return "";
+        }
+
+        if(tokens[indiceTK].lexema == ")"){
+            tabulador++;
+            tabulador++;
+            cd += ":\n"+this.tabulacion()+"break\n"
+            indiceTK++;
+            tabulador--;
+            tabulador--;
+        }else{
+            this.errorSin();
+            return "";
+        }
+
+        if(tokens[indiceTK].lexema == ";"){
+            indiceTK++;
+        }else{
+            this.errorSin();
+            return "";
+        }
+        
+        return cd;
+    }
+
+    switch():string{
+        let cd = this.tabulacion();
+
+        if(tokens[indiceTK].lexema == "switch"){
+            cd += "def switch";
+            indiceTK++;
+        }else{
+            this.errorSin();
+            return "";
+        }
+
+        if(tokens[indiceTK].lexema == "("){
+            cd += "(";
+            indiceTK++;
+        }else{
+            this.errorSin();
+            return "";
+        }
+
+        if(tokens[indiceTK].idTipo == 18){
+            cd += tokens[indiceTK].lexema;
+            indiceTK++;
+        }else{
+            this.errorSin();
+            return "";
+        }
+
+        if(tokens[indiceTK].lexema == ")"){
+            cd += ")";
+            indiceTK++;
+        }else{
+            this.errorSin();
+            return "";
+        }
+
+        if(tokens[indiceTK].lexema == "{"){
+            cd += ":\n";
+            tabulador++;
+            cd += this.tabulacion()+"switcher={\n"
+            indiceTK++;
+        }else{
+            this.errorSin();
+            return "";
+        }
+
+        if(tokens[indiceTK].lexema == "case"){
+            cd += "(";
+            indiceTK++;
+        }else{
+            this.errorSin();
+            return "";
+        }
+
+        return cd;
+    }
+
+    return():string{
+        let cd = this.tabulacion();
+
+        if(tokens[indiceTK].lexema == "return"){
+            cd += "return ";
+            indiceTK++;
+        }else{
+            this.errorSin();
+            return "";
+        }
+
+        if(tokens[indiceTK].lexema == "true" || tokens[indiceTK].lexema == "false"){
+            cd += tokens[indiceTK].lexema;
+            indiceTK++;
+
+            if(tokens[indiceTK].lexema != ";"){
+                this.errorSin();
+                return "";
+            }
+
+        }else if(tokens[indiceTK].lexema != ";"){
+            while(indiceTK < tokens.length && tokens[indiceTK].lexema != ";"){
+                if(tokens[indiceTK].idTipo == 18 || tokens[indiceTK].idTipo == 29 ||
+                    tokens[indiceTK].idTipo == 21 || tokens[indiceTK].idTipo == 20){
+                    cd += tokens[indiceTK].lexema + " ";
+                    indiceTK++;
+                }else{
+                    this.errorSin();
+                    return "";
+                }
+
+                if(tokens[indiceTK].idTipo == 1 || tokens[indiceTK].idTipo == 2 ||
+                    tokens[indiceTK].idTipo == 4 || tokens[indiceTK].idTipo == 3){
+                    cd += tokens[indiceTK].lexema + " ";
+                    indiceTK++;
+
+                    if(tokens[indiceTK].lexema == ";"){
+                        this.errorSin();
+                        return "";
+                    }
+                }
+
+            }
+
+        }
+
+        if(tokens[indiceTK].lexema == ";"){
+            cd += "\n";
+            indiceTK++;
+        }else{
+            this.errorSin();
+            return "";
+        }
+
+        return cd;
+    }
+
+    continue():string{
+        let cd = this.tabulacion();
+
+        if(tokens[indiceTK].lexema == "continue"){
+            cd += "continue ";
+            indiceTK++;
+        }else{
+            this.errorSin();
+            return "";
+        }
+
+        if(tokens[indiceTK].lexema == ";"){
+            cd += "\n";
+            indiceTK++;
+        }else{
+            this.errorSin();
+            return "";
+        }
+
+        return cd;
+    }
+
+    break():string{
+        let cd = this.tabulacion();
+
+        if(tokens[indiceTK].lexema == "break"){
+            cd += "break ";
+            indiceTK++;
+        }else{
+            this.errorSin();
+            return "";
+        }
+
+        if(tokens[indiceTK].lexema == ";"){
+            cd += "\n";
+            indiceTK++;
+        }else{
+            this.errorSin();
+            return "";
+        }
+
+        return cd;
+    }
+
+    comentario():string{
+        let cd = this.tabulacion();
+        if(tokens[indiceTK].idTipo == 15){
+            cd += "#"+tokens[indiceTK].lexema+"\n";
+        }else if( tokens[indiceTK].idTipo == 16){
+            cd += "'''"+tokens[indiceTK].lexema+"'''\n";
+        }
+
+        indiceTK++;
+        return cd;
+    }
+
+    consoleWrite():string{
+        let cd = this.tabulacion();
+
+        if(tokens[indiceTK].lexema == "Console"){
+            indiceTK++;
+        }else{
+            this.errorSin();
+            return "";
+        }
+
+        if(tokens[indiceTK].lexema == "."){
+            indiceTK++;
+        }else{
+            this.errorSin();
+            return "";
+        }
+
+        if(tokens[indiceTK].lexema == "Write"){
+            cd += "print";
+            indiceTK++;
+        }else{
+            this.errorSin();
+            return "";
+        }
+
+        if(tokens[indiceTK].lexema == "("){
+            indiceTK++;
+            cd += "(";
+        }else{
+            this.errorSin();
+            return "";
+        }
+
+        while(tokens[indiceTK].lexema != ")"){
+            if(tokens[indiceTK].idTipo == 20 || tokens[indiceTK].idTipo == 21){
+                cd += "\"" + tokens[indiceTK].lexema + "\"";
+                indiceTK++;
+            }else if(tokens[indiceTK].idTipo == 29 || tokens[indiceTK].idTipo == 18){
+                cd += tokens[indiceTK].lexema;
+                indiceTK++;
+            }else{
+                this.errorSin();
+                return "";
+            }
+
+            if(tokens[indiceTK].lexema == "+"){
+                indiceTK++;
+                cd += "+";
+                if(tokens[indiceTK].lexema == ")"){
+                    this.errorSin();
+                    return "";
+                }
+            }else if(tokens[indiceTK].lexema != ")"){
+                this.errorSin();
+                return "";
+            }
+        }
+
+        if(tokens[indiceTK].lexema == ")"){
+            indiceTK++;
+            cd += ")";
+        }else{
+            this.errorSin();
+            return "";
+        }
+
+        if(tokens[indiceTK].lexema == ";"){
+            cd += "\n";
+            indiceTK++;
+        }else{
+            this.errorSin();
+            return "";
+        }
+
+        return cd;
+    }
+
+    tipo():boolean{
+        if(tokens[indiceTK].lexema == "int" || tokens[indiceTK].lexema == "double" || 
+                tokens[indiceTK].lexema == "char" || tokens[indiceTK].lexema == "string" ||
+                tokens[indiceTK].lexema == "bool"){
+            return true;
+        } else{
+            return false;
+        }
+        
     }
 
     errorSin(){
         var consola = (document.getElementById("txtConsola") as HTMLInputElement);
-        consola.value += "error Sintactico->" + tokens[indiceTK].lexema + "\n";
+        consola.value += "Error sintactico->" + tokens[indiceTK].to_string() + "\n";
         indiceTK++;
+        this.recuperar();
+        entro = true;
     }
+
 
     es_reservada(texto:string){
         let letras = ["int","double","char","bool","string","void","main","if",
